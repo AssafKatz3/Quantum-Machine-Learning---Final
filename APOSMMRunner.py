@@ -8,6 +8,8 @@ class GraphType(Enum):
     RANDOM_3_REGULAR = 1
     RANDOM_9_REGULAR = 2
     ERDOS_RENYI = 3
+    RANDOM_LOBSTER = 4  #
+
 
 class APOSMMRunner:
     def __init__(self):
@@ -17,40 +19,55 @@ class APOSMMRunner:
         self.qaoa_results = {}
 
     def generate_graph(self, graph_type):
-        """
-        Generate the graph based on the graph_type.
-
-        Parameters:
-            graph_type (GraphType): The type of graph to generate.
-
-        Returns:
-            graph: The generated graph object.
-        """
         if graph_type == GraphType.RANDOM_3_REGULAR:
             graph = nx.random_regular_graph(3, 16)
         elif graph_type == GraphType.RANDOM_9_REGULAR:
             graph = nx.random_regular_graph(9, 16)
         elif graph_type == GraphType.ERDOS_RENYI:
             graph = nx.erdos_renyi_graph(16, 0.8)
+        elif graph_type == GraphType.RANDOM_LOBSTER:
+            graph = nx.random_lobster(20, 0.5, 0.5)
         else:
             raise ValueError("Invalid graph_type")
 
         return graph
 
-    def initialize_aposmm_optimizer(self, graph, p):
+    def cost_function(self, params):
         """
-        Initialize the APOSMM optimizer with the given graph and p-value.
+        Compute the cost function for a given set of parameters.
+
+        Parameters:
+            params (numpy.ndarray): The parameter values.
+
+        Returns:
+            cost (float): The cost function value.
+        """
+        # ... (implement your cost function here)
+        # Compute and return the cost function value
+        pass
+
+    def initialize_aposmm_optimizer(self, graph, p, nfev):
+        """
+        Initialize the APOSMM optimizer with the given graph, p-value, and the number of function evaluations.
 
         Parameters:
             graph: The graph object for the optimization.
             p (int): The p-value used in the QAOA.
+            nfev (int): The total number of evaluations of the cost function.
 
         Returns:
             optimizer: The initialized APOSMM optimizer object.
         """
-        # Replace this with your actual implementation to initialize the APOSMM optimizer
-        # This function should return the initialized APOSMM optimizer object
-        pass
+        # Define initial guess for parameters
+        initial_params = np.zeros(2 * p)
+
+        # Define bounds for parameters
+        bounds = [(-np.pi, np.pi)] * 2 * p
+
+        # Initialize the APOSMM optimizer using BOBYQA
+        optimizer = minimize(self.cost_function, initial_params, method='trust-constr', bounds=bounds, options={'maxiter': nfev})
+
+        return optimizer
 
     def run_aposmm(self, graph_type, p):
         """
