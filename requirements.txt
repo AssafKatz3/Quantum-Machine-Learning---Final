@@ -1,3 +1,7 @@
 networkx
 numpy
 matplotlib
+scipy
+qiskit
+qiskit_algorithms
+qiskit_aer

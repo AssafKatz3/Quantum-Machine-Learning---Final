@@ -6,10 +6,8 @@ from operator import itemgetter
 from scipy.optimize import minimize
 import qiskit
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, execute, Aer
-from qiskit.algorithms import NumPyEigensolver
+from qiskit_algorithms import NumPyEigensolver
 from qiskit.quantum_info import Pauli
-from qiskit.opflow import PauliOp, SummedOp
-from qiskit.opflow.primitive_ops import PrimitiveOp
 from qiskit.providers.fake_provider.backends import FakeJakarta, FakeNairobi, FakePerth
 from qiskit_aer.noise import NoiseModel
 from qiskit.tools.visualization import plot_histogram
