@@ -11,6 +11,8 @@ class QAOACircuit:
 
         Parameters:
             qaoa_circuit (Quantum Circuit): A qiskit quantum QAOA circuit for the given graph.
+            beta (list): A list of beta parameters for the QAOA circuit.
+            gamma (list): A list of gamma parameters for the QAOA circuit.
         """
         self.graph = G
         self.vertex_count = G.number_of_nodes()
