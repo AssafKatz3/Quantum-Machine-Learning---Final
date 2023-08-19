@@ -1,14 +1,17 @@
-import networkx as nx
-
 class Graph7:
     def __init__(self, G, name):
         """
         Class to define the Graph objects.
 
         Parameters:
-            qaoa_circuit (Quantum Circuit): A qiskit quantum QAOA circuit for the given graph.
-            beta (list): A list of beta parameters for the QAOA circuit.
-            gamma (list): A list of gamma parameters for the QAOA circuit.
+            G (nx.Graph): A NetworkX graph object.
+            name (str): Name of the graph.
         """
         self.graph = G
         self.name = name
+
+    def get_graph(self):
+        return self.graph
+
+    def get_title(self):
+        return self.name
