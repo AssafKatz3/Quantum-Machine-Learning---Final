@@ -25,31 +25,32 @@ class HeatMap:
                         else:
                             parameter_occurrences[rounded_beta, rounded_gamma] = occurrences_matrix[beta_index, gamma_index]
 
-        # # Create sorted lists of beta and gamma values
-        # sorted_beta_values = sorted(set([key[0] for key in parameter_occurrences.keys()]))
-        # sorted_gamma_values = sorted(set([key[1] for key in parameter_occurrences.keys()]))
+        # Create sorted lists of beta and gamma values
+        sorted_beta_values = sorted(set([key[0] for key in parameter_occurrences.keys()]))
+        sorted_gamma_values = sorted(set([key[1] for key in parameter_occurrences.keys()]))
 
-        # # Create dictionaries to map beta and gamma values to indices
-        # beta_index_map = {beta: index for index, beta in enumerate(sorted_beta_values)}
-        # gamma_index_map = {gamma: index for index, gamma in enumerate(sorted_gamma_values)}
+        beta_index_map = {beta: index for index, beta in enumerate(sorted_beta_values)}
+        gamma_index_map = {gamma: index for index, gamma in enumerate(sorted_gamma_values)}
 
-        # # Create a 2D numpy array to store the occurrences
-        # occurrences_matrix = np.zeros((len(sorted_gamma_values), len(sorted_beta_values)))
+        occurrences_matrix = np.zeros((len(sorted_gamma_values), len(sorted_beta_values)))
 
-        # # Populate the occurrences_matrix
-        # for (beta, gamma), occurrences in parameter_occurrences.items():
-        #     beta_idx = beta_index_map[beta]
-        #     gamma_idx = gamma_index_map[gamma]
-        #     occurrences_matrix[gamma_idx, beta_idx] = occurrences
+        # Populate the occurrences_matrix
+        for (beta, gamma), occurrences in parameter_occurrences.items():
+            beta_idx = beta_index_map[beta]
+            gamma_idx = gamma_index_map[gamma]
+            occurrences_matrix[gamma_idx, beta_idx] = occurrences
 
+        # Normalize probabilities between 0 and 1
+        normalized_matrix = occurrences_matrix / np.sum(occurrences_matrix)
+        
         plt.figure(figsize=(10, 8))
-        plt.imshow(np.asarray(parameter_occurrences), cmap='hot', interpolation='nearest', aspect='auto')
-        plt.colorbar(label='Occurrences')
-        plt.xlabel('$\\beta$ Index')
-        plt.ylabel('$\\gamma$ Index')
-        plt.title('$\\beta$-$\\gamma$ Occurrences Heatmap')
-        # plt.xticks(np.arange(len(sorted_beta_values)), sorted_beta_values)
-        # plt.yticks(np.arange(len(sorted_gamma_values)), sorted_gamma_values)
+        plt.imshow(normalized_matrix, cmap='hot', interpolation='nearest', aspect='auto',
+                   extent=[min(sorted_beta_values), max(sorted_beta_values),
+                           min(sorted_gamma_values), max(sorted_gamma_values)])
+        plt.colorbar(label='Probability')
+        plt.xlabel('$\\beta$')
+        plt.ylabel('$\\gamma$')
+        plt.title('$\\beta$-$\\gamma$ Probability Heatmap')
         plt.show()
 
     def callback(self, xk):
