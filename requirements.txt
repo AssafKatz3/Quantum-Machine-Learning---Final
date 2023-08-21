@@ -5,3 +5,4 @@ scipy
 qiskit
 qiskit_algorithms
 qiskit_aer
+tabulate

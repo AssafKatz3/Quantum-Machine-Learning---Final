@@ -24,6 +24,34 @@ class SimType(Enum):
     NOISY_SIMULATOR = 3
 
 class QAOASimulation:
+    """
+    Class to define the simulation parameters and methods for Quantum Approximate Optimization Algorithm (QAOA) circuits.
+
+    Parameters:
+        sim_type (SimType): The type of simulator to use (STATE_VECTOR, IDEAL_SIMULATOR, NOISY_SIMULATOR).
+    
+    Attributes:
+        type (SimType): The type of simulator being used.
+        backend (qiskit.providers.BaseBackend): The backend for the simulation type.
+        noise_model (qiskit.providers.aer.noise.noise_model.NoiseModel): The noise model for the simulation type.
+
+    Methods:
+        _get_backend(): Returns the backend for the simulation type.
+        _noise_setup(): Returns the noise model for the simulation type.
+        _invert_counts(counts): Inverts a counts dictionary.
+        _maxcut_obj(x, G): Computes the cut size for a given cut x of graph G.
+        _compute_maxcut_energy(counts, G, maxcut_vals): Computes the maxcut energy for a set of counts.
+        _get_black_box_objective(G, p, shots_amt): Returns the black box objective function for the given graph.
+        get_opt_params(G, p, optimizer, opt_options): Gets the optimal parameters for the given graph.
+        run_circuit_optimal_params(res_sample, G, p, analysis): Runs the circuit with the optimal parameters.
+        best_solution(G, counts): Returns the best solution for the given graph.
+    """
+
+    # Define the full init_point as a static property
+    full_init_point = np.array([0.81069872, 2.2067517 , 0.83830696, 2.15579759, 0.37060699,
+                                2.42068091, 6.1575306 , 2.2453419 , 3.85060091, 6.137845,
+                                6.1575306 , 2.2453419 , 3.85060091, 6.137845])
+
     def __init__(self, sim_type):
         """
         Class to define the simulation parameters for the circuits.
@@ -58,6 +86,12 @@ class QAOASimulation:
     def _invert_counts(self, counts):
         """
         Inverts the counts dictionary.
+
+        Parameters:
+            counts (dict): The dictionary containing measurement outcomes and their corresponding counts.
+
+        Returns:
+            dict: The inverted dictionary where measurement outcomes are reversed and counts are preserved.
         """
         return {k[::-1]:v for k, v in counts.items()}
         
@@ -65,6 +99,13 @@ class QAOASimulation:
     def _maxcut_obj(self, x, G):
         """
         Compute the cut size for a given cut x of graph G.
+
+        Parameters:
+            x (list): A list representing the node assignment to partitions in the cut.
+            G (networkx.Graph): The graph for which the cut size is computed.
+
+        Returns:
+            int: The computed cut size.
         """
         cut = 0
         for i, j in G.edges():
@@ -75,7 +116,15 @@ class QAOASimulation:
 
     def compute_maxcut_energy(self, counts, G, maxcut_vals):
         """
-        Compute the maxcut energy for a given set of counts.
+        Compute the MaxCut energy for a given set of measurement counts.
+
+        Parameters:
+            counts (dict): A dictionary of measurement outcomes and their corresponding counts.
+            G (networkx.Graph): The graph for which MaxCut energy is computed.
+            maxcut_vals (list): A list to store individual MaxCut values.
+
+        Returns:
+            float: The computed MaxCut energy.
         """
         energy = 0
         total_counts = 0
@@ -103,26 +152,45 @@ class QAOASimulation:
             return self.compute_maxcut_energy(self._invert_counts(counts), G.graph, [])
         return f
     
-    def get_opt_params(self, G, p=7, optimizer='COBYLA', opt_options={'maxiter':500, 'disp': True}):
+    def get_opt_params(self, G, p, optimizer='COBYLA', opt_options={'maxiter': 500, 'disp': True}):
         """
-        Returns the optimal parameters for the given graph.
-        """
-        # p is the number of QAOA alternating operators
-        obj = self._get_black_box_objective(G, p)
+        Get the optimal parameters for the given graph.
 
-        init_point = np.array([0.81069872, 2.2067517 , 0.83830696, 2.15579759, 0.37060699,
-            2.42068091, 6.1575306 , 2.2453419 , 3.85060091, 6.137845,6.1575306 , 2.2453419 , 3.85060091, 6.137845  ])
-        # We are going to limit the number of iterations to 2500
+        Parameters:
+            G (networkx.Graph): The graph for which to find the optimal parameters.
+            p (int): The number of QAOA alternating operators.
+            optimizer (str): The optimization method to use (default is 'COBYLA').
+            opt_options (dict): Options to pass to the optimization method (default is {'maxiter': 500, 'disp': True}).
+
+        Returns:
+            scipy.optimize.OptimizeResult: The optimization result containing the optimal parameters.
+        """
+        obj = self._get_black_box_objective(G, p)
+        
+        # Construct the initial point using the first p values and last p values
+        init_point = np.concatenate([self.full_init_point[:p], self.full_init_point[-p:]])
+        
+        # Perform the optimization
         res_sample = minimize(obj, init_point, method=optimizer, options=opt_options)
         return res_sample
     
-    def run_circuit_optimal_params(self, res_sample, G, p=7, analysis=True):
+    def run_circuit_optimal_params(self, res_sample, G, p, analysis=False):
         """
         Runs the circuit with the optimal parameters.
+
+        Parameters:
+            res_sample (scipy.optimize.OptimizeResult): The optimization result containing the optimal parameters.
+            G (GraphData): The graph for which to run the circuit.
+            p (int): The number of QAOA alternating operators.
+            analysis (bool): Flag indicating whether to perform analysis (default is False).
+
+        Returns:
+            dict: A dictionary containing measurement counts.
         """
         optimal_theta = res_sample['x']
         qc = QAOACircuit(G.graph, optimal_theta[:p], optimal_theta[p:])
         counts = self._invert_counts(self.backend.run(qc.qaoa_circuit, shots=4096).result().get_counts())
+
 
         if analysis:
             energies = defaultdict(int)
@@ -139,7 +207,13 @@ class QAOASimulation:
     def best_solution(self, G, counts):
         """
         Returns the best solution for the given graph.
+
+        Parameters:
+            G (GraphData): The graph for which to find the best solution.
+            counts (dict): A dictionary containing measurement counts.
+
+        Returns:
+            tuple: A tuple containing the best cut value and the corresponding solution.
         """
         best_cut, best_solution = min([(self._maxcut_obj(x, G.graph),x) for x in counts.keys()], key=itemgetter(0))
-        print(f"Best string: {best_solution} with cut: {-best_cut}")
         return best_cut, best_solution
