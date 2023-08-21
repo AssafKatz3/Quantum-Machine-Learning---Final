@@ -75,7 +75,7 @@ class QAOASimulation:
                 cut -= 1
         return cut
 
-    def _compute_maxcut_energy(self, counts, G, maxcut_vals):
+    def compute_maxcut_energy(self, counts, G, maxcut_vals):
         """
         Compute the maxcut energy for a given set of counts.
         """
@@ -102,7 +102,7 @@ class QAOASimulation:
                        shots=shots_amt).result()
             counts = result.get_counts()
             # return the energy
-            return self._compute_maxcut_energy(self._invert_counts(counts), G.graph, [])
+            return self.compute_maxcut_energy(self._invert_counts(counts), G.graph, [])
         return f
     
     def get_opt_params(self, G, p=7, optimizer='COBYLA', opt_options={'maxiter':500, 'disp': True}):
