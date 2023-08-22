@@ -47,11 +47,6 @@ class QAOASimulation:
         best_solution(G, counts): Returns the best solution for the given graph.
     """
 
-    # Define the full init_point as a static property
-    full_init_point = np.array([0.81069872, 2.2067517 , 0.83830696, 2.15579759, 0.37060699,
-                                2.42068091, 6.1575306 , 2.2453419 , 3.85060091, 6.137845,
-                                6.1575306 , 2.2453419 , 3.85060091, 6.137845])
-
     def __init__(self, sim_type):
         """
         Class to define the simulation parameters for the circuits.
@@ -141,8 +136,8 @@ class QAOASimulation:
         """
         def f(theta):
             # let's assume first half is betas, second half is gammas
-            beta = theta[:p]
-            gamma = theta[p:]
+            beta = theta[:7]
+            gamma = theta[7:]
             qc = QAOACircuit(G.graph, beta, gamma)
             result = execute(qc.qaoa_circuit, self.backend,
                        noise_model=self.noise_model,
@@ -166,9 +161,11 @@ class QAOASimulation:
             scipy.optimize.OptimizeResult: The optimization result containing the optimal parameters.
         """
         obj = self._get_black_box_objective(G, p)
-        
-        # Construct the initial point using the first p values and last p values
-        init_point = np.concatenate([self.full_init_point[:p], self.full_init_point[-p:]])
+
+        # Initialize point        
+        init_point = np.array([0.81069872, 2.2067517 , 0.83830696, 2.15579759, 0.37060699,
+                                2.42068091, 6.1575306 , 2.2453419 , 3.85060091, 6.137845,
+                                6.1575306 , 2.2453419 , 3.85060091, 6.137845])
         
         # Perform the optimization
         res_sample = minimize(obj, init_point, method=optimizer, options=opt_options)
@@ -188,7 +185,7 @@ class QAOASimulation:
             dict: A dictionary containing measurement counts.
         """
         optimal_theta = res_sample['x']
-        qc = QAOACircuit(G.graph, optimal_theta[:p], optimal_theta[p:])
+        qc = QAOACircuit(G.graph, optimal_theta[:7], optimal_theta[7:])
         counts = self._invert_counts(self.backend.run(qc.qaoa_circuit, shots=4096).result().get_counts())
 
 

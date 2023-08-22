@@ -1,6 +1,7 @@
 import networkx as nx
 
 class GraphData:
+    # TODO: Add graph type
     def __init__(self, G, layers, probability):
         """
         Class to define the Graph objects.
@@ -13,4 +14,4 @@ class GraphData:
         self.graph = G
         self.layers = layers
         self.probability = probability
-        self.name = f'Graph #Layers={layers}, probability={probability:.2f}'
+        self.name = f'Graph #Layers={layers}, probability={probability:.2f}' # TODO: Change to %
