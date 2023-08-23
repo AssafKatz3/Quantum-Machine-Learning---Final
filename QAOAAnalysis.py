@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from tabulate import tabulate
 from collections import defaultdict
+import matplotlib
+from GraphData import GraphType
 
 class QAOAAnalysis:
     """
@@ -108,7 +110,7 @@ class QAOAAnalysis:
         Plot approximate rate vs. number of layers and probability.
 
         Displays:
-        Plots of approximate rate vs. number of layers and probability.
+        Plots of approximate rate vs. number of layers and probability for each graph type.
         """
         # Separate the data for plotting
         approximately_rate_layers_data = {}  # Dictionary to store approximately_rate data per probability
@@ -116,47 +118,57 @@ class QAOAAnalysis:
         for graph_obj in self.graph_objs:
             prob = graph_obj.probability
             layers = graph_obj.layers
+            graph_type = graph_obj.graph_type  # Add graph_type to GraphData class
             if prob not in approximately_rate_layers_data:
-                approximately_rate_layers_data[prob] = []
+                approximately_rate_layers_data[prob] = {}
             if layers not in approximately_rate_prob_data:
-                approximately_rate_prob_data[layers] = []
+                approximately_rate_prob_data[layers] = {}
+            if graph_type not in approximately_rate_layers_data[prob]:
+                approximately_rate_layers_data[prob][graph_type] = []
+            if graph_type not in approximately_rate_prob_data[layers]:
+                approximately_rate_prob_data[layers][graph_type] = []
             approximately_rate = -self.best_solutions[graph_obj.name][0] / self.cut_values[graph_obj.name]
-            approximately_rate_layers_data[prob].append(approximately_rate)
-            approximately_rate_prob_data[layers].append(approximately_rate)
+            approximately_rate_layers_data[prob][graph_type].append(approximately_rate)
+            approximately_rate_prob_data[layers][graph_type].append(approximately_rate)
 
         # Extract unique layers and probabilities from graph_objs
         unique_layers = sorted(set(graph_obj.layers for graph_obj in self.graph_objs))
         unique_probs = sorted(set(graph_obj.probability for graph_obj in self.graph_objs))
+        
+        line_styles = ['-', '--', '-.', ':']
+        all_graph_types = list(GraphType)  # List of all enum values
 
-        # Define 10 different line styles
-        line_styles = ['-', '--', '-.', ':', '.', '+', 'x', '*', 'd', 's']
+        # Plot Approximate Rate vs. Number of Layers for each graph type
+        for graph_type in all_graph_types:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for i, prob in enumerate(unique_probs):
+                approximately_rate_list = approximately_rate_layers_data[prob].get(graph_type, [])
+                linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
+                approximately_rate_list = approximately_rate_list[:len(unique_layers)]
+                ax.plot(unique_layers, approximately_rate_list, linestyle=linestyle, label=f'{prob:.1%}')
+            ax.set_xlabel('Number of Layers')
+            ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
+            ax.set_title(f'Approximate Rate vs. Number of Layers - Graph Type: {graph_type.name}')
+            ax.legend()
+            ax.grid(True)
+            plt.tight_layout()
+            plt.show()
 
-        # Plot Approximate Rate vs. Number of Layers
-        fig1, ax1 = plt.subplots(figsize=(10, 6))
-        for i, prob in enumerate(unique_probs):
-            approximately_rate_list = approximately_rate_layers_data[prob]
-            linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-            ax1.plot(unique_layers[:len(approximately_rate_list)], approximately_rate_list, linestyle=linestyle, label=f'{prob * 100:.1%}')
-        ax1.set_xlabel('Number of Layers')
-        ax1.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-        ax1.set_title('Approximate Rate vs. Number of Layers')
-        ax1.legend()
-        ax1.grid(True)
-        plt.tight_layout()
-        plt.show()
-
-        # Plot Approximate Rate vs. Probability
-        fig2, ax2 = plt.subplots(figsize=(10, 6))
-        for i, layers in enumerate(unique_layers):
-            approximately_rate_list = approximately_rate_prob_data[layers]
-            linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-            ax2.plot(unique_probs[:len(approximately_rate_list)], approximately_rate_list, linestyle=linestyle)
-        ax2.set_xlabel('Probability')
-        ax2.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-        ax2.set_title('Approximate Rate vs. Probability')
-        ax2.grid(True)
-        plt.tight_layout()
-        plt.show()
+        # Plot Approximate Rate vs. Probability for each graph type
+        for graph_type in all_graph_types:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for i, layers in enumerate(unique_layers):
+                approximately_rate_list = approximately_rate_prob_data[layers].get(graph_type, [])
+                linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
+                approximately_rate_list = approximately_rate_list[:len(unique_probs)]
+                ax.plot(unique_probs, approximately_rate_list, linestyle=linestyle, label=f'{layers} Layers')
+            ax.set_xlabel('Probability')
+            ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
+            ax.set_title(f'Approximate Rate vs. Probability - Graph Type: {graph_type.name}')
+            ax.legend()
+            ax.grid(True)
+            plt.tight_layout()
+            plt.show()
 
     def plot_energy_histogram_maxcut(self, counts, G):
         """

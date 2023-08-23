@@ -21,5 +21,5 @@ class GraphData:
         self.graph = G
         self.layers = layers
         self.probability = probability
-        self.name = f'{graph_type.value} #Layers={layers}, Probability={probability*100:.0f}%'
+        self.name = f'{graph_type.value} #Layers={layers}, Probability={probability:.1%}'
 
