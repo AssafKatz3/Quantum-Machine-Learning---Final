@@ -39,11 +39,11 @@ class QAOASimulation:
         _get_backend(): Returns the backend for the simulation type.
         _noise_setup(): Returns the noise model for the simulation type.
         _invert_counts(counts): Inverts a counts dictionary.
-        _maxcut_obj(x, G): Computes the cut size for a given cut x of graph G.
+        maxcut_obj(x, G): Computes the cut size for a given cut x of graph G.
         _compute_maxcut_energy(counts, G, maxcut_vals): Computes the maxcut energy for a set of counts.
         _get_black_box_objective(G, p, shots_amt): Returns the black box objective function for the given graph.
         get_opt_params(G, p, optimizer, opt_options): Gets the optimal parameters for the given graph.
-        run_circuit_optimal_params(res_sample, G, p, analysis): Runs the circuit with the optimal parameters.
+        run_circuit_optimal_params(res_sample, G, p): Runs the circuit with the optimal parameters.
         best_solution(G, counts): Returns the best solution for the given graph.
     """
 
@@ -91,7 +91,7 @@ class QAOASimulation:
         return {k[::-1]:v for k, v in counts.items()}
         
 
-    def _maxcut_obj(self, x, G):
+    def maxcut_obj(self, x, G):
         """
         Compute the cut size for a given cut x of graph G.
 
@@ -124,7 +124,7 @@ class QAOASimulation:
         energy = 0
         total_counts = 0
         for meas, meas_count in counts.items():
-            obj_for_meas = self._maxcut_obj(meas, G)
+            obj_for_meas = self.maxcut_obj(meas, G)
             maxcut_vals.append(obj_for_meas)
             energy += obj_for_meas * meas_count
             total_counts += meas_count
@@ -188,17 +188,6 @@ class QAOASimulation:
         qc = QAOACircuit(G.graph, optimal_theta[:7], optimal_theta[7:])
         counts = self._invert_counts(self.backend.run(qc.qaoa_circuit, shots=4096).result().get_counts())
 
-
-        if analysis:
-            energies = defaultdict(int)
-            for k, v in counts.items():
-                energies[self._maxcut_obj(k, G.graph)] += v
-            x,y = zip(*energies.items())
-            plt.bar(x,y)
-            plt.xlabel('Energy')
-            plt.ylabel('Counts')
-            plt.title('Energy histogram for MaxCut\nSimulator Type: {}\nGraph: {}'.format(self.type.name, G.name))
-
         return counts
     
     def best_solution(self, G, counts):
@@ -212,5 +201,5 @@ class QAOASimulation:
         Returns:
             tuple: A tuple containing the best cut value and the corresponding solution.
         """
-        best_cut, best_solution = min([(self._maxcut_obj(x, G.graph),x) for x in counts.keys()], key=itemgetter(0))
+        best_cut, best_solution = min([(self.maxcut_obj(x, G.graph),x) for x in counts.keys()], key=itemgetter(0))
         return best_cut, best_solution
