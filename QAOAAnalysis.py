@@ -144,8 +144,11 @@ class QAOAAnalysis:
             for i, prob in enumerate(unique_probs):
                 approximately_rate_list = approximately_rate_layers_data[prob].get(graph_type, [])
                 linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-                approximately_rate_list = approximately_rate_list[:len(unique_layers)]
-                ax.plot(unique_layers, approximately_rate_list, linestyle=linestyle, label=f'{prob:.1%}')
+                
+                # Pad or truncate approximately_rate_list to match the length of unique_layers
+                approximately_rate_list_padded = approximately_rate_list + [None] * (len(unique_layers) - len(approximately_rate_list))
+                ax.plot(unique_layers, approximately_rate_list_padded, linestyle=linestyle, label=f'{prob:.1%}')
+                
             ax.set_xlabel('Number of Layers')
             ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
             ax.set_title(f'Approximate Rate vs. Number of Layers - Graph Type: {graph_type.name}')
@@ -160,8 +163,11 @@ class QAOAAnalysis:
             for i, layers in enumerate(unique_layers):
                 approximately_rate_list = approximately_rate_prob_data[layers].get(graph_type, [])
                 linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-                approximately_rate_list = approximately_rate_list[:len(unique_probs)]
-                ax.plot(unique_probs, approximately_rate_list, linestyle=linestyle, label=f'{layers} Layers')
+                
+                # Pad or truncate approximately_rate_list to match the length of unique_probs
+                approximately_rate_list_padded = approximately_rate_list + [None] * (len(unique_probs) - len(approximately_rate_list))
+                
+                ax.plot(unique_probs, approximately_rate_list_padded, linestyle=linestyle, label=f'{layers} Layers')
             ax.set_xlabel('Probability')
             ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
             ax.set_title(f'Approximate Rate vs. Probability - Graph Type: {graph_type.name}')
