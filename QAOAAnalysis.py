@@ -108,29 +108,23 @@ class QAOAAnalysis:
 
     def plot_approximate_rate(self):
         """
-        Plot approximate rate vs. number of layers and probability.
+        Plot approximate rate vs. number of layers.
 
         Displays:
-        Plots of approximate rate vs. number of layers and probability for each graph type.
+        Plots of approximate rate vs. number of layers for each graph type.
         """
         # Separate the data for plotting
         approximately_rate_layers_data = {}  # Dictionary to store approximately_rate data per probability
-        approximately_rate_prob_data = {}  # Dictionary to store approximately_rate data per layer
         for graph_obj in self.graph_objs:
             prob = graph_obj.probability
             layers = graph_obj.layers
             graph_type = graph_obj.graph_type  # Add graph_type to GraphData class
             if prob not in approximately_rate_layers_data:
                 approximately_rate_layers_data[prob] = {}
-            if layers not in approximately_rate_prob_data:
-                approximately_rate_prob_data[layers] = {}
             if graph_type not in approximately_rate_layers_data[prob]:
                 approximately_rate_layers_data[prob][graph_type] = []
-            if graph_type not in approximately_rate_prob_data[layers]:
-                approximately_rate_prob_data[layers][graph_type] = []
             approximately_rate = -self.best_solutions[graph_obj.name][0] / self.cut_values[graph_obj.name]
             approximately_rate_layers_data[prob][graph_type].append(approximately_rate)
-            approximately_rate_prob_data[layers][graph_type].append(approximately_rate)
 
         # Extract unique layers and probabilities from graph_objs
         unique_layers = sorted(set(graph_obj.layers for graph_obj in self.graph_objs))
@@ -153,25 +147,6 @@ class QAOAAnalysis:
             ax.set_xlabel('Number of Layers')
             ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
             ax.set_title(f'Approximate Rate vs. Number of Layers\nGraph Type: {graph_type.name}, #Shots: {self.simulator.shot_amt}')
-            ax.legend()
-            ax.grid(True)
-            plt.tight_layout()
-            plt.show()
-
-        # Plot Approximate Rate vs. Probability for each graph type
-        for graph_type in all_graph_types:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            for i, layers in enumerate(unique_layers):
-                approximately_rate_list = approximately_rate_prob_data[layers].get(graph_type, [])
-                linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-                
-                # Pad or truncate approximately_rate_list to match the length of unique_probs
-                approximately_rate_list_padded = approximately_rate_list + [None] * (len(unique_probs) - len(approximately_rate_list))
-                
-                ax.plot(unique_probs, approximately_rate_list_padded, linestyle=linestyle, label=f'{layers} Layers')
-            ax.set_xlabel('Probability')
-            ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-            ax.set_title(f'Approximate Rate vs. Probability\nGraph Type: {graph_type.name}, #Shots: {self.simulator.shot_amt}')
             ax.legend()
             ax.grid(True)
             plt.tight_layout()
@@ -208,7 +183,6 @@ class QAOAAnalysis:
         """
         # Create dictionaries to store the data
         relative_rate_layers_data = {}
-        relative_rate_prob_data = {}
         reference_best_solutions = {}
 
         for graph_obj in reference_qaoa_analysis.graph_objs:
@@ -222,7 +196,6 @@ class QAOAAnalysis:
                 comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
             # Create dictionaries to store the data
             relative_rate_layers_data = {}
-            relative_rate_prob_data = {}
 
             for graph_obj in qaoa_analysis.graph_objs:
                 prob = graph_obj.probability
@@ -231,16 +204,11 @@ class QAOAAnalysis:
 
                 if prob not in relative_rate_layers_data:
                     relative_rate_layers_data[prob] = {}
-                if layers not in relative_rate_prob_data:
-                    relative_rate_prob_data[layers] = {}
                 if graph_type not in relative_rate_layers_data[prob]:
                     relative_rate_layers_data[prob][graph_type] = []
-                if graph_type not in relative_rate_prob_data[layers]:
-                    relative_rate_prob_data[layers][graph_type] = []
 
                 relative_rate = qaoa_analysis.best_solutions[graph_obj.name][0] / reference_best_solutions[(prob, layers)]
                 relative_rate_layers_data[prob][graph_type].append(relative_rate)
-                relative_rate_prob_data[layers][graph_type].append(relative_rate)
 
             line_styles = ['-', '--', '-.', ':']
             all_graph_types = list(GraphType)  # List of all enum values
@@ -251,24 +219,6 @@ class QAOAAnalysis:
 
             # Plot Relative Rate vs. Number of Layers and Probability for each graph type
             for graph_type in all_graph_types:
-                # Plot Relative Rate vs. Probability
-                fig, ax = plt.subplots(figsize=(10, 6))
-                for i, layers in enumerate(unique_layers):
-                    relative_rate_list = relative_rate_prob_data[layers].get(graph_type, [])
-                    linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-                    
-                    # Pad or truncate relative_rate_list to match the length of unique_probs
-                    relative_rate_list_padded = relative_rate_list + [None] * (len(unique_probs) - len(relative_rate_list))
-                    
-                    ax.plot(unique_probs, relative_rate_list_padded, linestyle=linestyle, label=f'{layers} Layers')
-                ax.set_xlabel('Probability')
-                ax.set_ylabel('Relative Rate')
-                ax.set_title(f'Relative Rate vs. Probability - {comparison_text} - Graph Type: {graph_type.name}')
-                ax.legend()
-                ax.grid(True)
-                plt.tight_layout()
-                plt.show()
-
                 # Plot Relative Rate vs. Layers
                 fig, ax = plt.subplots(figsize=(10, 6))
                 for i, prob in enumerate(unique_probs):

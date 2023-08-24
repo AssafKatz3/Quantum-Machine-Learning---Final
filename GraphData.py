@@ -3,8 +3,9 @@ import networkx as nx
 
 class GraphType(Enum):
     RANDOM_PARTITION = "Random Partition"
-    ERDOS_RENYI = "Erdos-Renyi"
+    ERDOS_RENYI = "Erdős–Rényi"
     RANDOM_GRAPH = "Random Graph"
+    FAKE_COMPUTER = "Fake Computer"
 
 class GraphData:
     def __init__(self, graph_type, G, layers, probability):
