@@ -30,6 +30,7 @@ class QAOAAnalysis:
         """
         opt_res_counts_dict = {}  # Create a dictionary to store results
 
+        print(f"Shot amounts {self.simulator.shot_amt}:")
         for graph_obj in self.graph_objs:
             opt_res = self.simulator.get_opt_params(graph_obj, graph_obj.layers)
             opt_res_counts = self.simulator.run_circuit_optimal_params(opt_res, graph_obj, graph_obj.layers)
@@ -60,16 +61,16 @@ class QAOAAnalysis:
         # Prepare data for the table
         table_data = []
         for graph_obj_name, (best_cut, best_solution) in self.best_solutions.items():
-            table_data.append([graph_obj_name, -best_cut, best_solution])
+            table_data.append([graph_obj_name, -best_cut, best_solution, self.simulator.shot_amt])
 
         # Define table headers
-        headers = ["Graph Name", "Best Cut", "Best Solution"]
+        headers = ["Graph Name", "Best Cut", "Best Solution", "#Shots"]
 
         # Display table using tabulate
         table = tabulate(table_data, headers=headers, tablefmt='grid')
         print(table)
 
-    def plot_graphs(self):
+    def plot_maxcut_graphs(self):
         """
         Plot graphs with colored nodes and edges based on best solutions.
 
@@ -102,7 +103,7 @@ class QAOAAnalysis:
 
             # Draw the graph with colored nodes and edges
             nx.draw(G, node_color=colors, with_labels=True, font_weight='bold', edge_color=edge_colors)
-            plt.title(f'Graph: {graph_obj.name}')
+            plt.title(f'Graph: {graph_obj.name}, #Shots: {self.simulator.shot_amt}')
             plt.show()
 
     def plot_approximate_rate(self):
@@ -151,7 +152,7 @@ class QAOAAnalysis:
                 
             ax.set_xlabel('Number of Layers')
             ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-            ax.set_title(f'Approximate Rate vs. Number of Layers - Graph Type: {graph_type.name}')
+            ax.set_title(f'Approximate Rate vs. Number of Layers\nGraph Type: {graph_type.name}, #Shots: {self.simulator.shot_amt}')
             ax.legend()
             ax.grid(True)
             plt.tight_layout()
@@ -170,7 +171,7 @@ class QAOAAnalysis:
                 ax.plot(unique_probs, approximately_rate_list_padded, linestyle=linestyle, label=f'{layers} Layers')
             ax.set_xlabel('Probability')
             ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-            ax.set_title(f'Approximate Rate vs. Probability - Graph Type: {graph_type.name}')
+            ax.set_title(f'Approximate Rate vs. Probability\nGraph Type: {graph_type.name}, #Shots: {self.simulator.shot_amt}')
             ax.legend()
             ax.grid(True)
             plt.tight_layout()
@@ -205,8 +206,6 @@ class QAOAAnalysis:
         Displays:
         Plots of relative rate vs. number of layers and probability for each graph type.
         """
-        reference_name = reference_qaoa_analysis.simulator.type.name.replace("_", " ").title()
-
         # Create dictionaries to store the data
         relative_rate_layers_data = {}
         relative_rate_prob_data = {}
@@ -217,7 +216,10 @@ class QAOAAnalysis:
 
         # Loop over the given QAOAAnalysis instances except the reference
         for qaoa_analysis in comparison_qaoa_analyses:
-            comparison_name = qaoa_analysis.simulator.type.name.replace("_", " ").title()
+            if qaoa_analysis.simulator.type != reference_qaoa_analysis.simulator.type:
+                comparison_text = f'{qaoa_analysis.simulator.type}/{reference_qaoa_analysis.simulator.type}'
+            else:
+                comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
             # Create dictionaries to store the data
             relative_rate_layers_data = {}
             relative_rate_prob_data = {}
@@ -261,7 +263,7 @@ class QAOAAnalysis:
                     ax.plot(unique_probs, relative_rate_list_padded, linestyle=linestyle, label=f'{layers} Layers')
                 ax.set_xlabel('Probability')
                 ax.set_ylabel('Relative Rate')
-                ax.set_title(f'Relative Rate vs. Probability - {comparison_name}/{reference_name} - Graph Type: {graph_type.name}')
+                ax.set_title(f'Relative Rate vs. Probability - {comparison_text} - Graph Type: {graph_type.name}')
                 ax.legend()
                 ax.grid(True)
                 plt.tight_layout()
@@ -279,7 +281,7 @@ class QAOAAnalysis:
                     ax.plot(unique_layers, relative_rate_list_padded, linestyle=linestyle, label=f'{prob:.1%}')
                 ax.set_xlabel('Number of Layers')
                 ax.set_ylabel('Relative Rate')
-                ax.set_title(f'Relative Rate vs. Number of Layers - {comparison_name}/{reference_name} - Graph Type: {graph_type.name}')
+                ax.set_title(f'Relative Rate vs. Number of Layers - {comparison_text} - Graph Type: {graph_type.name}')
                 ax.legend()
                 ax.grid(True)
                 plt.tight_layout()

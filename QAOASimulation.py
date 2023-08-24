@@ -19,9 +19,9 @@ from enum import Enum
 
 # Define an enumeration for the simulation types
 class SimType(Enum):
-    STATE_VECTOR = 1
-    IDEAL_SIMULATOR = 2
-    NOISY_SIMULATOR = 3
+    STATE_VECTOR = "State Vector"
+    IDEAL_SIMULATOR = "Ideal Simulator"
+    NOISY_SIMULATOR = "Noisy Simulator"
 
 class QAOASimulation:
     """
@@ -29,11 +29,13 @@ class QAOASimulation:
 
     Parameters:
         sim_type (SimType): The type of simulator to use (STATE_VECTOR, IDEAL_SIMULATOR, NOISY_SIMULATOR).
-    
+        shot_amt (int): Number of shots for the simulation (default is 4096).
+
     Attributes:
         type (SimType): The type of simulator being used.
         backend (qiskit.providers.BaseBackend): The backend for the simulation type.
         noise_model (qiskit.providers.aer.noise.noise_model.NoiseModel): The noise model for the simulation type.
+        shot_amt (int): Number of shots for the simulation.
 
     Methods:
         _get_backend(): Returns the backend for the simulation type.
@@ -41,22 +43,24 @@ class QAOASimulation:
         _invert_counts(counts): Inverts a counts dictionary.
         maxcut_obj(x, G): Computes the cut size for a given cut x of graph G.
         _compute_maxcut_energy(counts, G, maxcut_vals): Computes the maxcut energy for a set of counts.
-        _get_black_box_objective(G, p, shots_amt): Returns the black box objective function for the given graph.
+        _get_black_box_objective(G, p): Returns the black box objective function for the given graph.
         get_opt_params(G, p, optimizer, opt_options): Gets the optimal parameters for the given graph.
         run_circuit_optimal_params(res_sample, G, p): Runs the circuit with the optimal parameters.
         best_solution(G, counts): Returns the best solution for the given graph.
     """
 
-    def __init__(self, sim_type):
+    def __init__(self, sim_type, shot_amt):
         """
         Class to define the simulation parameters for the circuits.
 
         Parameters:
             sim_type (Enum): Simulator type parameter.
+            shot_amt (int): Number of shots for the simulation
         """
         self.type = sim_type
         self.backend = self._get_backend()
         self.noise_model = self._noise_setup()
+        self.shot_amt = shot_amt
 
     def _get_backend(self):
         """
@@ -130,7 +134,7 @@ class QAOASimulation:
             total_counts += meas_count
         return energy / total_counts
 
-    def _get_black_box_objective(self, G, p, shots_amt=4096):
+    def _get_black_box_objective(self, G, p):
         """
         Returns the black box objective function for the given graph.
         """
@@ -141,7 +145,7 @@ class QAOASimulation:
             qc = QAOACircuit(G.graph, beta, gamma)
             result = execute(qc.qaoa_circuit, self.backend,
                        noise_model=self.noise_model,
-                       shots=shots_amt).result()
+                       shots=self.shot_amt).result()
             counts = result.get_counts()
             # return the energy
             return self.compute_maxcut_energy(self._invert_counts(counts), G.graph, [])
@@ -186,7 +190,7 @@ class QAOASimulation:
         """
         optimal_theta = res_sample['x']
         qc = QAOACircuit(G.graph, optimal_theta[:7], optimal_theta[7:])
-        counts = self._invert_counts(self.backend.run(qc.qaoa_circuit, shots=4096).result().get_counts())
+        counts = self._invert_counts(self.backend.run(qc.qaoa_circuit, shots=self.shot_amt).result().get_counts())
 
         return counts
     
