@@ -4,5 +4,5 @@ matplotlib
 scipy
 qiskit
 qiskit_algorithms
-qiskit_aer
+qiskit_aer==0.10.0
 tabulate

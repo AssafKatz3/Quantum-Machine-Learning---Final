@@ -30,6 +30,7 @@ class QAOASimulation:
     Parameters:
         sim_type (SimType): The type of simulator to use (STATE_VECTOR, IDEAL_SIMULATOR, NOISY_SIMULATOR).
         shot_amt (int): Number of shots for the simulation (default is 4096).
+        noise_multiplier (float): Multiplier for noise probabilities (default is None).
 
     Attributes:
         type (SimType): The type of simulator being used.
@@ -39,17 +40,18 @@ class QAOASimulation:
 
     Methods:
         _get_backend(): Returns the backend for the simulation type.
-        _noise_setup(): Returns the noise model for the simulation type.
+        _noise_setup(multiplier): Returns the noise model for the simulation type.
+        _multiply_noise_probabilities(data, multiplier): Multiply probabilities of noise model data while normalizing.
+        _normalize_multiplied_probabilities(probabilities, multiplier): Normalize probabilities while applying a multiplier.
         _invert_counts(counts): Inverts a counts dictionary.
         maxcut_obj(x, G): Computes the cut size for a given cut x of graph G.
-        _compute_maxcut_energy(counts, G, maxcut_vals): Computes the maxcut energy for a set of counts.
+        compute_maxcut_energy(counts, G, maxcut_vals): Compute the MaxCut energy for a set of measurement counts.
         _get_black_box_objective(G, p): Returns the black box objective function for the given graph.
-        get_opt_params(G, p, optimizer, opt_options): Gets the optimal parameters for the given graph.
-        run_circuit_optimal_params(res_sample, G, p): Runs the circuit with the optimal parameters.
+        get_opt_params(G, p, optimizer, opt_options): Get the optimal parameters for the given graph.
+        run_circuit_optimal_params(res_sample, G, p, analysis): Runs the circuit with the optimal parameters.
         best_solution(G, counts): Returns the best solution for the given graph.
     """
-
-    def __init__(self, sim_type, shot_amt):
+    def __init__(self, sim_type, shot_amt, noise_multiplier=None):
         """
         Class to define the simulation parameters for the circuits.
 
@@ -59,7 +61,7 @@ class QAOASimulation:
         """
         self.type = sim_type
         self.backend = self._get_backend()
-        self.noise_model = self._noise_setup()
+        self.noise_model = self._noise_setup(noise_multiplier)
         self.shot_amt = shot_amt
 
     def _get_backend(self):
@@ -73,14 +75,60 @@ class QAOASimulation:
         elif self.type == SimType.NOISY_SIMULATOR:
             return FakeJakarta()
         
-    def _noise_setup(self):
+    def _noise_setup(self, multiplier):
         """
         Returns the noise model for the simulation type.
         """
         noise_model = None
         if self.type == SimType.NOISY_SIMULATOR:
             noise_model = NoiseModel.from_backend(self.backend)
+            if multiplier != None:
+                noise_model = NoiseModel.from_dict(_multiply_noise_probabilities(NoiseModel.to_dict(), multiplier))
         return noise_model
+
+    def _multiply_noise_probabilities(data, multiplier):
+        """
+        Multiply probabilities of noise model data while normalizing.
+
+        Parameters:
+            data (dict): Data to be multiplied and normalized.
+            multiplier (float): Multiplier for probabilities.
+
+        Returns:
+            dict: Multiplied and normalized data.
+        """
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == "probabilities" and isinstance(value, list):
+                    _normalize_multiplied_probabilities(value, multiplier)
+                if isinstance(value, dict):
+                    _multiply_noise_probabilities(value, multiplier)
+                elif isinstance(value, list):
+                    for item in value:
+                        _multiply_noise_probabilities(item, multiplier)
+        elif isinstance(data, list):
+            for item in data:
+                _multiply_noise_probabilities(item, multiplier)
+
+        return data
+
+    def _normalize_multiplied_probabilities(probabilities, multiplier):
+        """
+        Normalize probabilities while applying a multiplier.
+
+        Parameters:
+            probabilities (list): List of probabilities.
+            multiplier (float): Multiplier for probabilities.
+        """
+        if isinstance(probabilities, list):
+            if isinstance(probabilities[0], list):
+                for sublist in probabilities:
+                    _normalize_multiplied_probabilities(sublist, multiplier)
+            else:
+                new_values = [val * multiplier if val * multiplier <= 1 else val for val in probabilities]
+                sum_values = sum(new_values)
+                if sum_values > 0:
+                    probabilities[:] = [val / sum_values for val in new_values]
 
     def _invert_counts(self, counts):
         """
