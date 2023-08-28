@@ -7,20 +7,48 @@ from GraphData import GraphType
 
 class QAOAAnalysis:
     """
-    Class to perform QAOA analysis and visualization.
+    Class to analyze and visualize Quantum Approximate Optimization Algorithm (QAOA) results.
 
     Parameters:
-    graph_objs (list): List of graph objects for analysis.
-    simulator: QAOASimulation object for simulation and analysis.
-    cut_values (dict): Dictionary to store cut values for graph objects.
+        graph_objs (list): List of GraphData objects.
+        simulator (QAOASimulation): The simulator instance to use for analysis.
+        cut_values (dict): A dictionary containing cut values for each graph.
+
+    Attributes:
+        _simulator (QAOASimulation): The simulator instance.
+        _cut_values (dict): A dictionary containing cut values for each graph.
+        _best_solutions (dict): A dictionary containing best solutions for each graph.
+        _graph_objs (list): List of GraphData objects.
+        _name (str): The name of the first graph in graph_objs.
     """
 
     def __init__(self, graph_objs, simulator, cut_values):
-        self.graph_objs = graph_objs
-        self.name = graph_objs[0].name
-        self.simulator = simulator
-        self.cut_values = cut_values
-        self.best_solutions = {}
+        self._simulator = simulator
+        self._cut_values = cut_values
+        self._best_solutions = {}
+        self.graph_objs = graph_objs 
+
+    @property
+    def graph_objs(self):
+        return self._graph_objs
+
+    @graph_objs.setter
+    def graph_objs(self, value):
+        self._graph_objs = value
+        self._name = self._graph_objs[0].name  # Set the name attribute from the first graph_obj
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def simulator(self):
+        return self._simulator
+
+
+    @property
+    def cut_values(self):
+        return self._cut_values
 
     def run_optimal_params(self):
         """
@@ -31,10 +59,10 @@ class QAOAAnalysis:
         """
         opt_res_counts_dict = {}  # Create a dictionary to store results
 
-        print(f"Shot amounts {self.simulator.shot_amt}:")
-        for graph_obj in self.graph_objs:
-            opt_res = self.simulator.get_opt_params(graph_obj, graph_obj.layers)
-            opt_res_counts = self.simulator.run_circuit_optimal_params(opt_res, graph_obj, graph_obj.layers)
+        print(f"Shot amounts {self._simulator.shot_amt}:")
+        for graph_obj in self._graph_objs:
+            opt_res = self._simulator.get_opt_params(graph_obj, graph_obj.layers)
+            opt_res_counts = self._simulator.run_circuit_optimal_params(opt_res, graph_obj, graph_obj.layers)
             opt_res_counts_dict[graph_obj.name] = opt_res_counts
 
             print(f"Graph: {graph_obj.name}")
@@ -54,15 +82,15 @@ class QAOAAnalysis:
         str: Table containing best solutions for each graph object.
         """
         # Find the best solutions for each graph_obj using opt_res_counts
-        for graph_obj in self.graph_objs:
+        for graph_obj in self._graph_objs:
             opt_res_counts = opt_res_counts_dict[graph_obj.name]
-            best_cut, best_solution = self.simulator.best_solution(graph_obj, opt_res_counts)
-            self.best_solutions[graph_obj.name] = (best_cut, best_solution)
+            best_cut, best_solution = self._simulator.best_solution(graph_obj, opt_res_counts)
+            self._best_solutions[graph_obj.name] = (best_cut, best_solution)
 
         # Prepare data for the table
         table_data = []
-        for graph_obj_name, (best_cut, best_solution) in self.best_solutions.items():
-            table_data.append([graph_obj_name, -best_cut, best_solution, self.simulator.shot_amt])
+        for graph_obj_name, (best_cut, best_solution) in self._best_solutions.items():
+            table_data.append([graph_obj_name, -best_cut, best_solution, self._simulator.shot_amt])
 
         # Define table headers
         headers = ["Graph Name", "Best Cut", "Best Solution", "#Shots"]
@@ -79,9 +107,9 @@ class QAOAAnalysis:
         Plots of graphs with colored nodes and edges indicating the best solutions.
         """
         # Loop over graph_objs
-        for graph_obj in self.graph_objs:
+        for graph_obj in self._graph_objs:
             # Get the best solution for the current graph_obj
-            best_solution = self.best_solutions[graph_obj.name][1]
+            best_solution = self._best_solutions[graph_obj.name][1]
 
             # Color the graph nodes by part
             G = graph_obj.graph
@@ -104,7 +132,7 @@ class QAOAAnalysis:
 
             # Draw the graph with colored nodes and edges
             nx.draw(G, node_color=colors, with_labels=True, font_weight='bold', edge_color=edge_colors)
-            plt.title(f'Graph: {graph_obj.name}, #Shots: {self.simulator.shot_amt}')
+            plt.title(f'Graph: {graph_obj.name}, #Shots: {self._simulator.shot_amt}')
             plt.show()
 
     def plot_approximate_rate(self):
@@ -116,7 +144,7 @@ class QAOAAnalysis:
         """
         # Separate the data for plotting
         approximately_rate_layers_data = {}  # Dictionary to store approximately_rate data per name
-        for graph_obj in self.graph_objs:
+        for graph_obj in self._graph_objs:
             name = graph_obj.name
             layers = graph_obj.layers
             graph_type = graph_obj.graph_type  # Add graph_type to GraphData class
@@ -124,12 +152,12 @@ class QAOAAnalysis:
                 approximately_rate_layers_data[name] = {}
             if graph_type not in approximately_rate_layers_data[name]:
                 approximately_rate_layers_data[name][graph_type] = []
-            approximately_rate = -self.best_solutions[graph_obj.name][0] / self.cut_values[graph_obj.name]
+            approximately_rate = -self._best_solutions[graph_obj.name][0] / self._cut_values[graph_obj.name]
             approximately_rate_layers_data[name][graph_type].append(approximately_rate)
 
         # Extract unique layers and names from graph_objs
-        unique_layers = sorted(set(graph_obj.layers for graph_obj in self.graph_objs))
-        unique_names = sorted(set(graph_obj.name for graph_obj in self.graph_objs))
+        unique_layers = sorted(set(graph_obj.layers for graph_obj in self._graph_objs))
+        unique_names = sorted(set(graph_obj.name for graph_obj in self._graph_objs))
         
         line_styles = ['-', '--', '-.', ':']
         all_graph_types = list(GraphType)  # List of all enum values
@@ -147,7 +175,7 @@ class QAOAAnalysis:
                 
             ax.set_xlabel('Number of Layers')
             ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-            ax.set_title(f'Approximate Rate vs. Number of Layers\nGraph Type: {graph_type.name}, #Shots: {self.simulator.shot_amt}')
+            ax.set_title(f'Approximate Rate vs. Number of Layers\nGraph Type: {graph_type.name}, #Shots: {self._simulator.shot_amt}')
             ax.legend()
             ax.grid(True)
             plt.tight_layout()
@@ -163,12 +191,12 @@ class QAOAAnalysis:
         """
         energies = defaultdict(int)
         for k, v in counts.items():
-            energies[self.simulator._maxcut_obj(k, G.graph)] += v
+            energies[self._simulator._maxcut_obj(k, G.graph)] += v
         x,y = zip(*energies.items())
         plt.bar(x, y)
         plt.xlabel('Energy')
         plt.ylabel('Counts')
-        plt.title('Energy histogram for MaxCut\nSimulator Type: {}\nGraph: {}'.format(self.simulator.type.name, G.name))
+        plt.title('Energy histogram for MaxCut\nSimulator Type: {}\nGraph: {}'.format(self._simulator.type.name, G.name))
 
     @staticmethod
     def plot_relative_rate(reference_qaoa_analysis, *comparison_qaoa_analyses):
@@ -187,7 +215,7 @@ class QAOAAnalysis:
         reference_best_solutions = {}
 
         for graph_obj in reference_qaoa_analysis.graph_objs:
-            reference_best_solutions[(graph_obj.name, graph_obj.layers)] = reference_qaoa_analysis.best_solutions[graph_obj.name][0]
+            reference_best_solutions[(graph_obj.name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[graph_obj.name][0]
 
         # Loop over the given QAOAAnalysis instances except the reference
         for qaoa_analysis in comparison_qaoa_analyses:
@@ -208,7 +236,7 @@ class QAOAAnalysis:
                 if graph_type not in relative_rate_layers_data[name]:
                     relative_rate_layers_data[name][graph_type] = []
 
-                relative_rate = qaoa_analysis.best_solutions[graph_obj.name][0] / reference_best_solutions[(name, layers)]
+                relative_rate = qaoa_analysis._best_solutions[graph_obj.name][0] / reference_best_solutions[(name, layers)]
                 relative_rate_layers_data[name][graph_type].append(relative_rate)
 
             line_styles = ['-', '--', '-.', ':']
