@@ -69,4 +69,4 @@ class QAOACircuit:
         """
         Draw the circuit.
         """
-        return self.qaoa_circuit.draw('mpl')
+        return self.qaoa_circuit.draw('latex_source')

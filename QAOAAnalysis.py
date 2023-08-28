@@ -16,7 +16,7 @@ class QAOAAnalysis:
 
     Attributes:
         _simulator (QAOASimulation): The simulator instance.
-        _cut_values (dict): A dictionary containing cut values for each graph.
+        _cut_values (dict): A dictionary containing cut values (deterministic) for each graph.
         _best_solutions (dict): A dictionary containing best solutions for each graph.
         _graph_objs (list): List of GraphData objects.
         _name (str): The name of the first graph in graph_objs.
@@ -35,7 +35,9 @@ class QAOAAnalysis:
     @graph_objs.setter
     def graph_objs(self, value):
         self._graph_objs = value
-        self._name = self._graph_objs[0].name  # Set the name attribute from the first graph_obj
+        self._name = value[0].name 
+        self._name_without_noise = value[0].name_without_node
+        self.noise_multiplier = value[0].noise_multiplier
 
     @property
     def name(self):
@@ -59,7 +61,7 @@ class QAOAAnalysis:
         """
         opt_res_counts_dict = {}  # Create a dictionary to store results
 
-        print(f"Shot amounts {self._simulator.shot_amt}:")
+        print(f"#Shots {self._simulator.shot_amt}:")
         for graph_obj in self._graph_objs:
             opt_res = self._simulator.get_opt_params(graph_obj, graph_obj.layers)
             opt_res_counts = self._simulator.run_circuit_optimal_params(opt_res, graph_obj, graph_obj.layers)
@@ -140,46 +142,41 @@ class QAOAAnalysis:
         Plot approximate rate vs. number of layers.
 
         Displays:
-        Plots of approximate rate vs. number of layers for each graph type.
+        Plots of approximate rate vs. number of layers.
         """
         # Separate the data for plotting
         approximately_rate_layers_data = {}  # Dictionary to store approximately_rate data per name
         for graph_obj in self._graph_objs:
             name = graph_obj.name
             layers = graph_obj.layers
-            graph_type = graph_obj.graph_type  # Add graph_type to GraphData class
             if name not in approximately_rate_layers_data:
                 approximately_rate_layers_data[name] = {}
-            if graph_type not in approximately_rate_layers_data[name]:
-                approximately_rate_layers_data[name][graph_type] = []
             approximately_rate = -self._best_solutions[graph_obj.name][0] / self._cut_values[graph_obj.name]
-            approximately_rate_layers_data[name][graph_type].append(approximately_rate)
+            approximately_rate_layers_data[name].append(approximately_rate)
 
         # Extract unique layers and names from graph_objs
         unique_layers = sorted(set(graph_obj.layers for graph_obj in self._graph_objs))
         unique_names = sorted(set(graph_obj.name for graph_obj in self._graph_objs))
         
         line_styles = ['-', '--', '-.', ':']
-        all_graph_types = list(GraphType)  # List of all enum values
 
-        # Plot Approximate Rate vs. Number of Layers for each graph type
-        for graph_type in all_graph_types:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            for i, name in enumerate(unique_names):
-                approximately_rate_list = approximately_rate_layers_data[name].get(graph_type, [])
-                linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-                
-                # Pad or truncate approximately_rate_list to match the length of unique_layers
-                approximately_rate_list_padded = approximately_rate_list + [None] * (len(unique_layers) - len(approximately_rate_list))
-                ax.plot(unique_layers, approximately_rate_list_padded, linestyle=linestyle, label=name)
-                
-            ax.set_xlabel('Number of Layers')
-            ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-            ax.set_title(f'Approximate Rate vs. Number of Layers\nGraph Type: {graph_type.name}, #Shots: {self._simulator.shot_amt}')
-            ax.legend()
-            ax.grid(True)
-            plt.tight_layout()
-            plt.show()
+        # Plot Approximate Rate vs. Number of Layers for each graph
+        fig, ax = plt.subplots(figsize=(10, 6))
+        for i, name in enumerate(unique_names):
+            approximately_rate_list = approximately_rate_layers_data[name]
+            linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
+            
+            # Pad or truncate approximately_rate_list to match the length of unique_layers
+            approximately_rate_list_padded = approximately_rate_list + [None] * (len(unique_layers) - len(approximately_rate_list))
+            ax.plot(unique_layers, approximately_rate_list_padded, linestyle=linestyle, label=name)
+            
+        ax.set_xlabel('Number of Layers')
+        ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
+        ax.set_title(f'Approximate Rate vs. Number of Layers\n#Shots: {self._simulator.shot_amt}')
+        ax.legend()
+        ax.grid(True)
+        plt.tight_layout()
+        plt.show()
 
     def plot_energy_histogram_maxcut(self, counts, G):
         """
@@ -208,22 +205,24 @@ class QAOAAnalysis:
         - *comparison_qaoa_analyses (QAOAAnalysis): Variable number of QAOAAnalysis instances to compare with the reference.
 
         Displays:
-        Plots of relative rate vs. number of layers and name for each graph type.
+        Plots of relative rate vs. number of layers and name.
         """
         # Create dictionaries to store the data
         relative_rate_layers_data = {}
         reference_best_solutions = {}
 
         for graph_obj in reference_qaoa_analysis.graph_objs:
-            name = graph_obj.name.split(" Noise")[0] if " Noise" in graph_obj.name else graph_obj.name
+            name = graph_obj.name_without_node
             reference_best_solutions[(name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[name][0]
 
-        # Loop over the given QAOAAnalysis instances except the reference
+        # Loop over the given QAOAAnalysis instances except the reference (all comparsion between same graph instances)
         for qaoa_analysis in comparison_qaoa_analyses:
-            if qaoa_analysis.name != reference_qaoa_analysis.name:
-                comparison_text = f'{qaoa_analysis.name}/{reference_qaoa_analysis.name}'
-            else:
+            if qaoa_analysis.name == reference_qaoa_analysis.name: # #Shots
                 comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
+            elif qaoa_analysis.noise_multiplier == None: # Simulator types
+                comparison_text = f'{qaoa_analysis.name}/{reference_qaoa_analysis.name}'
+            else: # Noise level
+                comparison_text = f'{qaoa_analysis.noise_multiplier}/{reference_qaoa_analysis.noise_multiplier} xNoise'
             # Create dictionaries to store the data
             relative_rate_layers_data = {}
 
@@ -234,35 +233,30 @@ class QAOAAnalysis:
 
                 if name not in relative_rate_layers_data:
                     relative_rate_layers_data[name] = {}
-                if graph_type not in relative_rate_layers_data[name]:
-                    relative_rate_layers_data[name][graph_type] = []
 
-                relative_rate = qaoa_analysis._best_solutions[graph_obj.name][0] / reference_best_solutions[(name.split(" Noise")[0] if " Noise" in name else name, layers)]
-                relative_rate_layers_data[name][graph_type].append(relative_rate)
+                relative_rate = qaoa_analysis._best_solutions[name][0] / reference_best_solutions[(graph_obj.name_without_node, layers)]
+                relative_rate_layers_data[name].append(relative_rate)
 
             line_styles = ['-', '--', '-.', ':']
-            all_graph_types = list(GraphType)  # List of all enum values
             
             # Extract unique layers and names from graph_objs
             unique_layers = sorted(set(graph_obj.layers for graph_obj in qaoa_analysis.graph_objs))
             unique_names = sorted(set(graph_obj.name for graph_obj in qaoa_analysis.graph_objs))
 
-            # Plot Relative Rate vs. Number of Layers and name for each graph type
-            for graph_type in all_graph_types:
-                # Plot Relative Rate vs. Layers
-                fig, ax = plt.subplots(figsize=(10, 6))
-                for i, name in enumerate(unique_names):
-                    relative_rate_list = relative_rate_layers_data[name].get(graph_type, [])
-                    linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
-                    
-                    # Pad or truncate relative_rate_list to match the length of unique_layers
-                    relative_rate_list_padded = relative_rate_list + [None] * (len(unique_layers) - len(relative_rate_list))
-                    
-                    ax.plot(unique_layers, relative_rate_list_padded, linestyle=linestyle, label=name)
-                ax.set_xlabel('Number of Layers')
-                ax.set_ylabel('Relative Rate')
-                ax.set_title(f'Relative Rate vs. Number of Layers - {comparison_text} - Graph Type: {graph_type.name}')
-                ax.legend()
-                ax.grid(True)
-                plt.tight_layout()
-                plt.show()
+            # Plot Relative Rate vs. Number of Layers and name
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for i, name in enumerate(unique_names):
+                relative_rate_list = relative_rate_layers_data[name]
+                linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
+                
+                # Pad or truncate relative_rate_list to match the length of unique_layers
+                relative_rate_list_padded = relative_rate_list + [None] * (len(unique_layers) - len(relative_rate_list))
+                
+                ax.plot(unique_layers, relative_rate_list_padded, linestyle=linestyle, label=name)
+            ax.set_xlabel('Number of Layers')
+            ax.set_ylabel('Relative Rate')
+            ax.set_title(f'Relative Rate vs. Number of Layers\n{comparison_text}')
+            ax.legend()
+            ax.grid(True)
+            plt.tight_layout()
+            plt.show()

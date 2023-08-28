@@ -188,10 +188,10 @@ class QAOASimulation:
         """
         def f(theta):
             # let's assume first half is betas, second half is gammas
-            beta = theta[:7]
-            gamma = theta[7:]
-            qc = QAOACircuit(G.graph, beta, gamma)
-            result = execute(qc.qaoa_circuit, self.backend,
+            beta = theta[:p]
+            gamma = theta[p:]
+            self.qc = QAOACircuit(G.graph, beta, gamma)
+            result = execute(self.qc.qaoa_circuit, self.backend,
                        noise_model=self.noise_model,
                        shots=self.shot_amt).result()
             counts = result.get_counts()
@@ -211,16 +211,18 @@ class QAOASimulation:
 
         Returns:
             scipy.optimize.OptimizeResult: The optimization result containing the optimal parameters.
+        
+        Prints:
+            LaTeX source for circuit drawing
         """
         obj = self._get_black_box_objective(G, p)
 
-        # Initialize point        
-        init_point = np.array([0.81069872, 2.2067517 , 0.83830696, 2.15579759, 0.37060699,
-                                2.42068091, 6.1575306 , 2.2453419 , 3.85060091, 6.137845,
-                                6.1575306 , 2.2453419 , 3.85060091, 6.137845])
+        # Initialize point to zero        
+        init_point = np.zeros(2*p)
         
         # Perform the optimization
         res_sample = minimize(obj, init_point, method=optimizer, options=opt_options)
+        print(self.qc.draw_circuit())
         return res_sample
     
     def run_circuit_optimal_params(self, res_sample, G, p, analysis=False):

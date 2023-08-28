@@ -8,7 +8,7 @@ class GraphType(Enum):
     FAKE_COMPUTER = "Fake Computer"
 
 class GraphData:
-    def __init__(self, graph_type, G, name, layers):
+    def __init__(self, graph_type, G, name, layers, noise_multiplier=None):
         """
         Class to define the Graph objects.
 
@@ -17,11 +17,17 @@ class GraphData:
             G (NetworkX Graph): The graph object.
             name (str): Name of the graph.
             layers (int): Number of QAOA layers.
+            noise_multiplier (int): The noise multiplier to include in the new names (defualt=None).
         """
         self.graph_type = graph_type
         self.graph = G
-        self.name = name
         self.layers = layers
+        self.name_without_node = name
+        if noise_multiplier != None:
+            self.name = name
+        else:
+            self.name = f'{name} Noise ×{noise_multiplier}'
+        self.noise_multiplier = noise_multiplier
 
     @staticmethod
     def duplicate_graph_objs_with_noise_multiplier(graph_objs, noise_multiplier):
@@ -37,7 +43,6 @@ class GraphData:
         """
         graph_objs_with_name = []
         for graph_obj in graph_objs:
-            new_name = f'{graph_obj.name} Noise x{noise_multiplier}'
-            new_graph_obj = GraphData(graph_obj.graph_type, graph_obj.graph, new_name, graph_obj.layers)
+            new_graph_obj = GraphData(graph_obj.graph_type, graph_obj.graph, graph_obj.name, graph_obj.layers, noise_multiplier)
             graph_objs_with_name.append(new_graph_obj)
         return graph_objs_with_name
