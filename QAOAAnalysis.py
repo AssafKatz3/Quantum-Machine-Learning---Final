@@ -215,7 +215,8 @@ class QAOAAnalysis:
         reference_best_solutions = {}
 
         for graph_obj in reference_qaoa_analysis.graph_objs:
-            reference_best_solutions[(graph_obj.name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[graph_obj.name][0]
+            name = graph_obj.name.split(" Noise")[0] if " Noise" in graph_obj.name else graph_obj.name
+            reference_best_solutions[(name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[name][0]
 
         # Loop over the given QAOAAnalysis instances except the reference
         for qaoa_analysis in comparison_qaoa_analyses:
@@ -236,7 +237,7 @@ class QAOAAnalysis:
                 if graph_type not in relative_rate_layers_data[name]:
                     relative_rate_layers_data[name][graph_type] = []
 
-                relative_rate = qaoa_analysis._best_solutions[graph_obj.name][0] / reference_best_solutions[(name, layers)]
+                relative_rate = qaoa_analysis._best_solutions[graph_obj.name][0] / reference_best_solutions[(name.split(" Noise")[0] if " Noise" in name else name, layers)]
                 relative_rate_layers_data[name][graph_type].append(relative_rate)
 
             line_styles = ['-', '--', '-.', ':']
