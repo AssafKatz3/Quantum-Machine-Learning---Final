@@ -239,7 +239,7 @@ class QAOASimulation:
             dict: A dictionary containing measurement counts.
         """
         optimal_theta = res_sample['x']
-        qc = QAOACircuit(G.graph, optimal_theta[:7], optimal_theta[7:])
+        qc = QAOACircuit(G.graph, optimal_theta[:p], optimal_theta[p:])
         counts = self._invert_counts(self.backend.run(qc.qaoa_circuit, shots=self.shot_amt).result().get_counts())
 
         return counts

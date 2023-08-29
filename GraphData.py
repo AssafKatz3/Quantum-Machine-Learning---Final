@@ -22,11 +22,12 @@ class GraphData:
         self.graph_type = graph_type
         self.graph = G
         self.layers = layers
-        self.name_without_node = name
-        if noise_multiplier != None:
-            self.name = name
+        self.short_name = name
+        self.name_without_noise = f"{name} #Layers {layers}"
+        if noise_multiplier == None:
+            self.name = self.name_without_noise
         else:
-            self.name = f'{name} Noise ×{noise_multiplier}'
+            self.name = f'{self.name_without_noise} Noise ×{noise_multiplier}'
         self.noise_multiplier = noise_multiplier
 
     @staticmethod

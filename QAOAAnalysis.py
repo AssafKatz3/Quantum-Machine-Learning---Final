@@ -36,7 +36,7 @@ class QAOAAnalysis:
     def graph_objs(self, value):
         self._graph_objs = value
         self._name = value[0].name 
-        self._name_without_noise = value[0].name_without_node
+        self._name_without_noise = value[0].name_without_noise
         self.noise_multiplier = value[0].noise_multiplier
 
     @property
@@ -147,23 +147,23 @@ class QAOAAnalysis:
         # Separate the data for plotting
         approximately_rate_layers_data = {}  # Dictionary to store approximately_rate data per name
         for graph_obj in self._graph_objs:
-            name = graph_obj.name
+            name = graph_obj.short_name
             layers = graph_obj.layers
             if name not in approximately_rate_layers_data:
                 approximately_rate_layers_data[name] = {}
             approximately_rate = -self._best_solutions[graph_obj.name][0] / self._cut_values[graph_obj.name]
-            approximately_rate_layers_data[name].append(approximately_rate)
+            approximately_rate_layers_data[name][layers] = approximately_rate
 
         # Extract unique layers and names from graph_objs
         unique_layers = sorted(set(graph_obj.layers for graph_obj in self._graph_objs))
-        unique_names = sorted(set(graph_obj.name for graph_obj in self._graph_objs))
+        unique_names = sorted(set(graph_obj.short_name for graph_obj in self._graph_objs))
         
         line_styles = ['-', '--', '-.', ':']
 
         # Plot Approximate Rate vs. Number of Layers for each graph
         fig, ax = plt.subplots(figsize=(10, 6))
         for i, name in enumerate(unique_names):
-            approximately_rate_list = approximately_rate_layers_data[name]
+            approximately_rate_list = list(dict(sorted(approximately_rate_layers_data[name].items())).values())
             linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
             
             # Pad or truncate approximately_rate_list to match the length of unique_layers
@@ -212,41 +212,40 @@ class QAOAAnalysis:
         reference_best_solutions = {}
 
         for graph_obj in reference_qaoa_analysis.graph_objs:
-            name = graph_obj.name_without_node
-            reference_best_solutions[(name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[name][0]
+            reference_best_solutions[(graph_obj.short_name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[graph_obj.name][0]
 
         # Loop over the given QAOAAnalysis instances except the reference (all comparsion between same graph instances)
         for qaoa_analysis in comparison_qaoa_analyses:
             if qaoa_analysis.name == reference_qaoa_analysis.name: # #Shots
                 comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
             elif qaoa_analysis.noise_multiplier == None: # Simulator types
-                comparison_text = f'{qaoa_analysis.name}/{reference_qaoa_analysis.name}'
+                comparison_text = f'{qaoa_analysis.short_name}/{reference_qaoa_analysis.short_name}'
             else: # Noise level
                 comparison_text = f'{qaoa_analysis.noise_multiplier}/{reference_qaoa_analysis.noise_multiplier} xNoise'
             # Create dictionaries to store the data
             relative_rate_layers_data = {}
 
             for graph_obj in qaoa_analysis.graph_objs:
-                name = graph_obj.name
+                name = graph_obj.short_name
                 layers = graph_obj.layers
                 graph_type = graph_obj.graph_type
 
                 if name not in relative_rate_layers_data:
                     relative_rate_layers_data[name] = {}
 
-                relative_rate = qaoa_analysis._best_solutions[name][0] / reference_best_solutions[(graph_obj.name_without_node, layers)]
-                relative_rate_layers_data[name].append(relative_rate)
+                relative_rate = qaoa_analysis._best_solutions[graph_obj.name][0] / reference_best_solutions[(name, layers)]
+                relative_rate_layers_data[name][layers] = relative_rate
 
             line_styles = ['-', '--', '-.', ':']
             
             # Extract unique layers and names from graph_objs
             unique_layers = sorted(set(graph_obj.layers for graph_obj in qaoa_analysis.graph_objs))
-            unique_names = sorted(set(graph_obj.name for graph_obj in qaoa_analysis.graph_objs))
+            unique_names = sorted(set(graph_obj.short_name for graph_obj in qaoa_analysis.graph_objs))
 
             # Plot Relative Rate vs. Number of Layers and name
             fig, ax = plt.subplots(figsize=(10, 6))
             for i, name in enumerate(unique_names):
-                relative_rate_list = relative_rate_layers_data[name]
+                relative_rate_list = list(dict(sorted(relative_rate_layers_data[name].items())).values())
                 linestyle = line_styles[i % len(line_styles)]  # Cycle through line styles
                 
                 # Pad or truncate relative_rate_list to match the length of unique_layers
