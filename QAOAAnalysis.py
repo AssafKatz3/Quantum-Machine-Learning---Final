@@ -61,12 +61,12 @@ class QAOAAnalysis:
         """
         opt_res_counts_dict = {}  # Create a dictionary to store results
 
-        print(f"#Shots {self._simulator.shot_amt}:")
         for graph_obj in self._graph_objs:
             opt_res = self._simulator.get_opt_params(graph_obj, graph_obj.layers)
             opt_res_counts = self._simulator.run_circuit_optimal_params(opt_res, graph_obj, graph_obj.layers)
             opt_res_counts_dict[graph_obj.name] = opt_res_counts
 
+            print(f"#Shots {self._simulator.shot_amt}:")
             print(f"Graph: {graph_obj.name}")
             print("Optimal Parameters:", opt_res)
             print("Optimal Results Counts:", opt_res_counts)
@@ -216,12 +216,12 @@ class QAOAAnalysis:
 
         # Loop over the given QAOAAnalysis instances except the reference (all comparsion between same graph instances)
         for qaoa_analysis in comparison_qaoa_analyses:
-            if qaoa_analysis.name == reference_qaoa_analysis.name: # #Shots
-                comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
-            elif qaoa_analysis.noise_multiplier == None: # Simulator types
-                comparison_text = f'{qaoa_analysis.short_name}/{reference_qaoa_analysis.short_name}'
-            else: # Noise level
+            if qaoa_analysis.noise_multiplier != None: # Noise level
                 comparison_text = f'{qaoa_analysis.noise_multiplier}/{reference_qaoa_analysis.noise_multiplier} xNoise'
+            elif qaoa_analysis.simulator.type == reference_qaoa_analysis.simulator.type: # #Shots
+                comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
+            else: # Simulator types
+                comparison_text = f'{qaoa_analysis.simulator.type.value}/{reference_qaoa_analysis.simulator.type.value}'
             # Create dictionaries to store the data
             relative_rate_layers_data = {}
 
