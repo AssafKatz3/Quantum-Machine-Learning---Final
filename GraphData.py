@@ -44,6 +44,6 @@ class GraphData:
         """
         graph_objs_with_name = []
         for graph_obj in graph_objs:
-            new_graph_obj = GraphData(graph_obj.graph_type, graph_obj.graph, graph_obj.name, graph_obj.layers, noise_multiplier)
+            new_graph_obj = GraphData(graph_obj.graph_type, graph_obj.graph, graph_obj.short_name, graph_obj.layers, noise_multiplier)
             graph_objs_with_name.append(new_graph_obj)
         return graph_objs_with_name
