@@ -132,17 +132,20 @@ class QAOAAnalysis:
 
             edge_colors = [G[edge[0]][edge[1]]['color'] for edge in G.edges()]
 
+            # Increase the font size of all texts in the plot
+            plt.rcParams['font.size'] = 16
+
             # Draw the graph with colored nodes and edges
-            nx.draw(G, node_color=colors, with_labels=True, font_weight='bold', edge_color=edge_colors)
-            plt.title(f'Graph: {graph_obj.name}, #Shots: {self._simulator.shot_amt}')
+            nx.draw(G, node_color=colors, with_labels=True, font_weight='bold', edge_color=edge_colors, font_size=16)
+            plt.title(f'Graph: {graph_obj.name}, #Shots: {self._simulator.shot_amt}', fontsize=16)
             plt.show()
 
-    def plot_approximate_rate(self):
+    def plot_approximation_ratio(self):
         """
-        Plot approximate rate vs. number of layers.
+        Plot approximation ratio vs. number of layers.
 
         Displays:
-        Plots of approximate rate vs. number of layers.
+        Plots of approximation ratio vs. number of layers.
         """
         # Separate the data for plotting
         approximately_rate_layers_data = {}  # Dictionary to store approximately_rate data per name
@@ -160,7 +163,10 @@ class QAOAAnalysis:
         
         line_styles = ['-', '--', '-.', ':']
 
-        # Plot Approximate Rate vs. Number of Layers for each graph
+        # Increase the font size of all texts in the plot
+        plt.rcParams['font.size'] = 16
+
+        # Plot Approximation Ratio vs. Number of Layers for each graph
         fig, ax = plt.subplots(figsize=(10, 6))
         for i, name in enumerate(unique_names):
             approximately_rate_list = list(dict(sorted(approximately_rate_layers_data[name].items())).values())
@@ -170,9 +176,9 @@ class QAOAAnalysis:
             approximately_rate_list_padded = approximately_rate_list + [None] * (len(unique_layers) - len(approximately_rate_list))
             ax.plot(unique_layers, approximately_rate_list_padded, linestyle=linestyle, label=name)
             
-        ax.set_xlabel('Number of Layers')
-        ax.set_ylabel('Approximate Rate (Optimal Counts / Cut Values)')
-        ax.set_title(f'Approximate Rate vs. Number of Layers\n#Shots: {self._simulator.shot_amt}')
+        ax.set_xlabel('Number of Layers', fontsize=16)
+        ax.set_ylabel('Approximation Ratio (Optimal Cut / Cut Values)', fontsize=16)
+        ax.set_title(f'Approximation Ratio vs. Number of Layers\n#Shots: {self._simulator.shot_amt}', fontsize=16)
         ax.legend()
         ax.grid(True)
         plt.tight_layout()
@@ -242,6 +248,9 @@ class QAOAAnalysis:
             unique_layers = sorted(set(graph_obj.layers for graph_obj in qaoa_analysis.graph_objs))
             unique_names = sorted(set(graph_obj.short_name for graph_obj in qaoa_analysis.graph_objs))
 
+            # Increase the font size of all texts in the plot
+            plt.rcParams['font.size'] = 16
+
             # Plot Relative Rate vs. Number of Layers and name
             fig, ax = plt.subplots(figsize=(10, 6))
             for i, name in enumerate(unique_names):
@@ -252,9 +261,9 @@ class QAOAAnalysis:
                 relative_rate_list_padded = relative_rate_list + [None] * (len(unique_layers) - len(relative_rate_list))
                 
                 ax.plot(unique_layers, relative_rate_list_padded, linestyle=linestyle, label=name)
-            ax.set_xlabel('Number of Layers')
-            ax.set_ylabel('Relative Rate')
-            ax.set_title(f'Relative Rate vs. Number of Layers\n{comparison_text}')
+            ax.set_xlabel('Number of Layers', fontsize=16)
+            ax.set_ylabel('Relative Rate', fontsize=16)
+            ax.set_title(f'Relative Rate vs. Number of Layers\n{comparison_text}', fontsize=16)
             ax.legend()
             ax.grid(True)
             plt.tight_layout()
