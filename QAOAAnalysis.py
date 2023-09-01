@@ -4,6 +4,10 @@ from tabulate import tabulate
 from collections import defaultdict
 import matplotlib
 from GraphData import GraphType
+import numpy as np
+import matplotlib.ticker as mtick
+from matplotlib.ticker import FuncFormatter
+import matplotlib.gridspec as gridspec
 
 class QAOAAnalysis:
     """
@@ -267,4 +271,42 @@ class QAOAAnalysis:
             ax.legend()
             ax.grid(True)
             plt.tight_layout()
+            plt.show()
+
+
+    @staticmethod
+    def draw_all_histograms(opt_res_counts_dict):
+        """
+        This function draws a histogram for each graph and number of shots in the given dictionary.
+
+        Args:
+            opt_res_counts_dict: The dictionary maps the number of shots to a dictionary that maps 
+                                 the graph name to a dictionary of counts per binary string of partition.
+        """
+        inverted_dict = {}
+        for shot_amt, graph_obj_counts in opt_res_counts_dict.items():
+            for graph_obj_name, counts in graph_obj_counts.items():
+                inverted_dict.setdefault(graph_obj_name, {})[shot_amt] = counts
+        plt.rcParams['font.size'] = 14
+
+        for graph_obj_name, shot_amt_histogram_dict in inverted_dict.items():
+            num_subplots = len(shot_amt_histogram_dict)
+            fig = plt.figure(figsize=(4, 3 * num_subplots))  # Adjust the figure size based on the number of subplots
+            gs = gridspec.GridSpec(num_subplots + 1, 1, height_ratios=[0.2] + [1] * num_subplots)  # Ensure space for super title
+
+            # Add super title
+            fig.suptitle(f"Histogram of counts for {graph_obj_name}", y=0.93)
+
+            for i, (shot_amt, counts_dict) in enumerate(shot_amt_histogram_dict.items()):
+                ax = fig.add_subplot(gs[i + 1])  # Start from index 1 to make space for super title
+                percentage = defaultdict(int)
+                for k, v in counts_dict.items():
+                    percentage[sum(1 for c in k if c == '1')] += v / shot_amt 
+                ax.bar(list(percentage.keys()), percentage.values())
+                ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y))) 
+                ax.set_ylabel("%", labelpad=10)
+                ax.set_xlabel("Cut value")
+                ax.set_title(f"#Shots={shot_amt}")
+
+            plt.tight_layout()  # Ensure proper spacing between subplots and super title
             plt.show()
