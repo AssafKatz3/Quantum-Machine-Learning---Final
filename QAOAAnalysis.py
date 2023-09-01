@@ -223,7 +223,7 @@ class QAOAAnalysis:
         # Loop over the given QAOAAnalysis instances except the reference (all comparsion between same graph instances)
         for qaoa_analysis in comparison_qaoa_analyses:
             if qaoa_analysis.noise_multiplier != None: # Noise level
-                comparison_text = f'{qaoa_analysis.noise_multiplier}/{reference_qaoa_analysis.noise_multiplier} xNoise'
+                comparison_text = f'{qaoa_analysis.noise_multiplier}/{reference_qaoa_analysis.noise_multiplier} xNoise {qaoa_analysis.simulator.shot_amt} #Shots'
             elif qaoa_analysis.simulator.type == reference_qaoa_analysis.simulator.type: # #Shots
                 comparison_text = f'{qaoa_analysis.simulator.shot_amt}/{reference_qaoa_analysis.simulator.shot_amt} #Shots'
             else: # Simulator types
