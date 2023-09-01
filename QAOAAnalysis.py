@@ -212,7 +212,7 @@ class QAOAAnalysis:
         reference_best_solutions = {}
 
         for graph_obj in reference_qaoa_analysis.graph_objs:
-            reference_best_solutions[(graph_obj.short_name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[graph_obj.name][0]
+            reference_best_solutions[(graph_obj.short_name, graph_obj.layers)] = reference_qaoa_analysis._best_solutions[graph_obj.name_without_noise][0]
 
         # Loop over the given QAOAAnalysis instances except the reference (all comparsion between same graph instances)
         for qaoa_analysis in comparison_qaoa_analyses:
