@@ -3,6 +3,7 @@ import networkx as nx
 from collections import defaultdict
 from operator import itemgetter
 from qiskit import QuantumCircuit
+from LayeredCircuit import LayeredCircuit
 
 class QAOACircuit:
     def __init__(self, G, beta:list, gamma:list):
@@ -69,4 +70,10 @@ class QAOACircuit:
         """
         Draw the circuit.
         """
-        return self.qaoa_circuit.draw('latex_source')
+        c = LayeredCircuit(self.qaoa_circuit)
+        l = len(c)
+        n = 17
+        result = ''
+        for i in range(l//n+1):
+            result += c[i*n:min(l,(i+1)*n)].latex() + "\n"
+        return result
