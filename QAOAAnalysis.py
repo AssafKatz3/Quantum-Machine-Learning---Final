@@ -275,7 +275,7 @@ class QAOAAnalysis:
 
 
     @staticmethod
-    def draw_all_histograms(opt_res_counts_dict):
+    def plot_partitioning_counts(opt_res_counts_dict):
         """
         This function draws a histogram for each graph and number of shots in the given dictionary.
 
@@ -295,7 +295,7 @@ class QAOAAnalysis:
             gs = gridspec.GridSpec(num_subplots + 1, 1, height_ratios=[0.2] + [1] * num_subplots)  # Ensure space for super title
 
             # Add super title
-            fig.suptitle(f"Histogram of counts for {graph_obj_name}", y=0.93)
+            fig.suptitle(f"Percent of nodes at partition 1 for {graph_obj_name}", y=0.95)
 
             for i, (shot_amt, counts_dict) in enumerate(shot_amt_histogram_dict.items()):
                 ax = fig.add_subplot(gs[i + 1])  # Start from index 1 to make space for super title
@@ -305,8 +305,8 @@ class QAOAAnalysis:
                 ax.bar(list(percentage.keys()), percentage.values())
                 ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y))) 
                 ax.set_ylabel("%", labelpad=10)
-                ax.set_xlabel("Cut value")
-                ax.set_title(f"#Shots={shot_amt}")
+                #ax.set_xlabel("#Nodes at partition 1")
+                ax.set_title(f"{shot_amt} #Shots")
 
             plt.tight_layout()  # Ensure proper spacing between subplots and super title
             plt.show()
