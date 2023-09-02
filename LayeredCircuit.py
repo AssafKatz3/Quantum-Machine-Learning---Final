@@ -1,3 +1,7 @@
+# This code was taken from https://tex.stackexchange.com/a/675114.
+# It is licensed under the terms of the Creative Commons Attribution-ShareAlike 4.0 International License.
+# To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/.
+
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag, dag_to_circuit
 
